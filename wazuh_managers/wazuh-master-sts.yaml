@@ -1,0 +1,75 @@
+# Copyright (C) 2018 Wazuh Inc.
+#
+# This program is a free software; you can redistribute it
+# and/or modify it under the terms of the GNU General Public
+# License (version 2) as published by the FSF - Free Software
+# Foundation.
+
+# Wazuh master StatefulSet
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: wazuh-manager-master
+  namespace: wazuh
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wazuh-manager
+      node-type: master
+  serviceName: wazuh-cluster
+  podManagementPolicy: Parallel
+  template:
+    metadata:
+      labels:
+        app: wazuh-manager
+        node-type: master
+      name: wazuh-manager-master
+    spec:
+      volumes:
+        - name: config
+          configMap:
+            name: wazuh-manager-master-conf   
+      containers:
+        - name: wazuh-manager
+          image: 'wazuh/wazuh:3.13.1_7.8.0'
+          resources:
+            requests:
+              cpu: 2
+              memory: 4096Mi
+            limits:
+              cpu: 4
+              memory: 6144Mi
+          volumeMounts:
+            - name: config
+              mountPath: /wazuh-config-mount/etc/ossec.conf
+              subPath: ossec.conf
+              readOnly: true
+            - name: wazuh-manager-master
+              mountPath: /var/ossec/data              
+          ports:
+            - containerPort: 1515
+              name: registration
+            - containerPort: 1516
+              name: cluster
+            - containerPort: 55000
+              name: api
+          env:
+            - name: http_proxy
+              value: http://www-proxy.seli.gic.ericsson.se:8080
+            - name: https_proxy
+              value: http://www-proxy.seli.gic.ericsson.se:8080
+            - name: no_proxy
+              value: 10.26.65.116,seliius21154,seliius21154.cluster.local,10.26.65.117,https://10.26.65.116:2379,seliius29116,seliius29116.cluster.local,10.26.65.118,https://10.26.65.118:2379,seliius29119,seliius29119.cluster.local,10.26.65.119,https://10.26.65.117:2379,seliius29120,seliius29120.cluster.local,10.26.65.120,seliius29121,seliius29121.cluster.local,10.26.65.121,seliius29122,seliius29122.cluster.local,127.0.0.1,localhost,10.233.0.0/16,https://10.233.0.0/16,http://10.233.0.0/16,http://elasticsearch:9200,http://kibana:5601,10.233.0.3,10.233.0.3:53,10.233.0.3:9153,http://10.233.0.3:53,https://wazuh,https://wazuh:55000,http://10.233.27.92:9200
+  volumeClaimTemplates:
+    - metadata:
+        name: wazuh-manager-master
+        namespace: wazuh
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: managed-nfs-storage
+        resources:
+          requests:
+            storage: 250Gi
