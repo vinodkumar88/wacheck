@@ -86,7 +86,7 @@ data:
       </wodle>
 
       <wodle name="cis-cat">
-        <disabled>yes</disabled>
+        <disabled>no</disabled>
         <timeout>1800</timeout>
         <interval>1d</interval>
         <scan-on-start>yes</scan-on-start>
